@@ -65,10 +65,6 @@ enum MeasurementTaskStatus {
     ///
     /// Used in ClimbHarder App
     Tare,
-    /// Soft taring the scale (substract the current weight)
-    ///
-    /// Used in Tindeq App
-    SoftTare,
 }
 
 /// Static tracking the state of the measurement task
@@ -180,7 +176,7 @@ async fn bt_task(connector: BleConnector<'static>, channel: &'static DataPointCh
                     } else {
                         critical_section::with(|cs| {
                             *(MEASUREMENT_TASK_STATUS).borrow_ref_mut(cs) =
-                                MeasurementTaskStatus::SoftTare;
+                                MeasurementTaskStatus::Tare;
                         });
                     }
                 }
@@ -330,18 +326,7 @@ async fn measurement_task(
             continue;
         }
 
-        let weigth = if status == MeasurementTaskStatus::SoftTare {
-            load_cell.tare(16).await;
-            critical_section::with(|cs| {
-                *MEASUREMENT_TASK_STATUS.borrow_ref_mut(cs) = MeasurementTaskStatus::Enabled;
-            });
-            critical_section::with(|cs| {
-                *DEVICE_TARED.borrow_ref_mut(cs) = true;
-            });
-            0.0
-        } else {
-            load_cell.get_measurement().await
-        };
+        let weigth = load_cell.get_measurement().await;
 
         let timestamp = (time::Instant::now().duration_since_epoch()).as_micros() as u32;
         let measurement = ResponseCode::WeigthtMeasurement(weigth, timestamp);
