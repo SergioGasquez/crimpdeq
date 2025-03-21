@@ -1,43 +1,45 @@
 # Calibration
 
-1. Using an IDE or text editor, open the project
-2. Reset the calibration factor and calibration offset
-   1. Open the `src/hx711.rs` file
-   2. Set `CALIBRATION_FACTOR` value to `1.0`
-   3. Set `CALIBRATION_OFFSET` value to `0.0`
-3. Upload the code with the new values:
-   1. Connect your device via USB-C
-   2. In a terminal, run:
-        ```bash
-        cargo run --release
-        ```
-4. Connect your device to the Tindeq or ClimbHarder app and go to the Live Data/Live View
-5. Measure how much it measures with no weight attached
-6. Measure how much it measures with a known weight attached
-   1. This known weight should be a value greater than the maximum weight that you are trying to apply. Using something like 80 kg should be enough
-7. Calculate the new calibration offset and factor:
-   1. To calibrate a scale sensor using two known points, use the linear equation:
-        ```
-        m = (y_2 - y_1) / (x_2 - x_1)
-        b = y_1 - m * x_1
-        ```
-        Where:
-        - `y1` is the actual weight (kg) with no weigth attached (should be `0`)
-        - `y2` is the actual weight (kg) of the known weight
-        - `x1` is the sensor reading with no weigth attached
-        - `x2` is the sensor reading with known weight
-        - `m` is the calibration factor
-        - `b` is the calibration offset
-8.  Update those values in the code:
-    1. Open the `src/hx711.rs` file
-    2. Update the `CALIBRATION_FACTOR` to the calculated `m` value
-    3. Update the `CALIBRATION_OFFSET` to the calculated `b` value
-    4. Upload the code with the new values:
-        1. Connect your device via USB-C
-        2. In a terminal, run:
-            ```bash
-            cargo run --release
-            ```
-9.  Verify that it now measures properly
+This guide will help you calibrate your Crimpdeq device to ensure accurate weight measurements. The calibration process involves using a known weight to establish a reference point for the device's measurements.
 
-For an example of calibration, see the following [Pull Request](https://github.com/SergioGasquez/crimpdeq/pull/11).
+1. Download and install the nRF Connect app for your platform:
+   - [Android](https://play.google.com/store/apps/details?id=no.nordicsemi.android.mcp&hl=es_419)
+   - [iOS](https://apps.apple.com/es/app/nrf-connect-for-mobile/id1054362403)
+   - [Desktop](https://www.nordicsemi.com/Products/Development-tools/nRF-Connect-for-Desktop/Download#infotabs) (Windows, Linux, macOS)
+2. Connect nRF Commect with Crimpdeq:
+   1. Launch the nRF Connect app
+   2. Navigate to the Scanner tab
+   3. Look for a device named "Progressor_7125"
+   4. Tap "Connect"
+   5. Once connected, the app will display the device’s services and characteristics.
+      ![nRF Discovered](./assets/Screenshot_1.png)
+3. Locate the Calibration Characteristic
+   1. Expand the "Unknown Service" section
+   2. Look for the characteristic with UUID: `7e4e1703-1ea6-40c9-9dcc-13d34ffead57`
+      ![Services](./assets/Screenshot_2.png)
+4. Calculate the Hex Value of your known weigth
+   1. Open the [Floating Point to Hex Converter](https://gregstoll.com/~gregstoll/floattohex/)
+   2. Use "Single-precision" floating point convertor
+   3. Enter your known weight in the "Float value" field
+   4. Click "Convert to hex"
+   5. Save the resulting "Hex value"
+      **Example:** For a known weight of 75.3 kg, the hex value would be `0x4296999a`
+5. Perform Calibration
+   1. Hang your Crimpdeq with no weight attached
+   2. Send the command `7300000000` to the characteristic:
+      - Tap the Up Arrow icon on the characteristic (`7e4e1703-1ea6-40c9-9dcc-13d34ffead57`)
+      - Enter the command as shown in the screenshot
+
+         ![Send weight](./assets/Screenshot_3.png)
+   3. Now, attach your known weight to the Crimpdeq
+   4. Prepare the calibration command:
+      - Take your hex value from the previous step
+      - Add `73` at the beginning
+       **Example:** For 75.3 kg (0x4296999a), the command would be: `734296999a`
+   5. Send this new command to the same characteristic (`7e4e1703-1ea6-40c9-9dcc-13d34ffead57`)
+
+## Important Notes
+- The known weight should be greater than the maximum weight you plan to measure
+- Make sure the device is stable and not moving when sending calibration commands
+- The calibration process should be performed in a controlled environment
+
